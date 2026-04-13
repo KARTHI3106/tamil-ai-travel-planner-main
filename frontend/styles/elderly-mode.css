@@ -1,0 +1,92 @@
+/* ─── Elderly-Friendly Mode ──────────────────────────────────────────────────
+   Activated via .elderly-mode class on the root container.
+   Provides larger text, bigger touch targets, higher contrast, and simplified layout.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* Base font size increase */
+.elderly-mode {
+  font-size: 18px !important;
+}
+
+/* Inputs and buttons */
+.elderly-mode input,
+.elderly-mode select,
+.elderly-mode textarea,
+.elderly-mode button {
+  font-size: 20px !important;
+  padding: 16px 24px !important;
+  min-height: 60px;
+}
+
+/* Headings */
+.elderly-mode h1 {
+  font-size: 36px !important;
+}
+
+.elderly-mode h2 {
+  font-size: 24px !important;
+}
+
+.elderly-mode h3 {
+  font-size: 20px !important;
+}
+
+/* Paragraphs and labels */
+.elderly-mode p,
+.elderly-mode label,
+.elderly-mode span,
+.elderly-mode td,
+.elderly-mode th {
+  font-size: 18px !important;
+}
+
+/* High contrast */
+.elderly-mode {
+  --text-color: #000;
+  --bg-color: #fff;
+  --primary-color: #0066cc;
+}
+
+.elderly-mode pre {
+  font-size: 17px !important;
+  line-height: 2 !important;
+}
+
+/* Larger touch targets */
+.elderly-mode button {
+  min-width: 120px;
+  margin: 8px;
+  border-radius: 12px !important;
+}
+
+/* Increase table padding */
+.elderly-mode td,
+.elderly-mode th {
+  padding: 12px 14px !important;
+}
+
+/* Simplified layout — hide recent queries section */
+.elderly-mode .recent-section {
+  display: none;
+}
+
+/* Badge text larger */
+.elderly-mode [style*="borderRadius: 12"] {
+  font-size: 14px !important;
+  padding: 4px 14px !important;
+}
+
+/* Make error messages more visible */
+.elderly-mode [style*="color: #c0392b"],
+.elderly-mode [style*="color: rgb(192, 57, 43)"] {
+  font-size: 18px !important;
+  font-weight: 600;
+}
+
+/* Focus outline for better keyboard navigation */
+.elderly-mode input:focus,
+.elderly-mode select:focus,
+.elderly-mode button:focus {
+  outline: 3px solid #0066cc !important;
+  outline-offset: 2px;
+}
