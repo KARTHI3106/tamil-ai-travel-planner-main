@@ -59,7 +59,7 @@ export default function Register() {
       localStorage.setItem('authToken', data.user.token);
       localStorage.setItem('userName', data.user.name);
       localStorage.setItem('userEmail', data.user.email);
-      router.push('/');
+      router.push('/planner');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,7 +73,7 @@ export default function Register() {
     <>
       <Head>
         <title>புதிய கணக்கு — தமிழ் AI பயண திட்டமிடுபவர்</title>
-        <meta name="description" content="Register for Tamil AI Travel Planner" />
+        <meta name="description" content="தமிழ் AI பயண திட்டமிடுபவரில் புதிய கணக்கு உருவாக்குங்கள்" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
@@ -87,9 +87,11 @@ export default function Register() {
         <div style={cardContainerStyle}>
           {/* Logo / Brand */}
           <div style={brandStyle}>
-            <div style={logoCircleStyle}>✈️</div>
+            <div style={logoCircleStyle}>
+              <i className="ri-plane-fill" style={{ color: '#fff', fontSize: '32px' }}></i>
+            </div>
             <h1 style={brandTitleStyle}>தமிழ் AI பயண திட்டமிடுபவர்</h1>
-            <p style={brandSubStyle}>Tamil AI Travel Planner</p>
+            <p style={brandSubStyle}>தமிழ் AI பயண திட்டமிடுபவர்</p>
           </div>
 
           {/* Register Card */}
@@ -117,7 +119,7 @@ export default function Register() {
               <form onSubmit={handleNext} style={{ marginTop: 20 }}>
                 {/* Name */}
                 <div style={fieldGroupStyle}>
-                  <label style={labelStyle}>👤 பெயர்</label>
+                  <label style={labelStyle}><i className="ri-user-line" style={{ marginRight: '8px' }}></i>பெயர்</label>
                   <input
                     id="register-name"
                     type="text"
@@ -132,13 +134,13 @@ export default function Register() {
 
                 {/* Email */}
                 <div style={fieldGroupStyle}>
-                  <label style={labelStyle}>📧 மின்னஞ்சல்</label>
+                  <label style={labelStyle}><i className="ri-mail-line" style={{ marginRight: '8px' }}></i>மின்னஞ்சல்</label>
                   <input
                     id="register-email"
                     type="email"
                     value={form.email}
                     onChange={e => updateField('email', e.target.value)}
-                    placeholder="example@email.com"
+                    placeholder="உதாரணம்@email.com"
                     style={inputStyle}
                     autoComplete="email"
                   />
@@ -146,7 +148,7 @@ export default function Register() {
 
                 {/* Phone */}
                 <div style={fieldGroupStyle}>
-                  <label style={labelStyle}>📱 தொலைபேசி <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>(விருப்பம்)</span></label>
+                  <label style={labelStyle}><i className="ri-phone-line" style={{ marginRight: '8px' }}></i>தொலைபேசி <span style={{ color: '#737373', fontSize: 12, fontWeight: 400 }}>(விருப்பம்)</span></label>
                   <input
                     id="register-phone"
                     type="tel"
@@ -158,7 +160,7 @@ export default function Register() {
                   />
                 </div>
 
-                {error && <div style={errorStyle}>⚠️ {error}</div>}
+                {error && <div style={errorStyle}><i className="ri-error-warning-line" style={{ marginRight: '8px' }}></i>{error}</div>}
 
                 <button id="register-next" type="submit" style={submitBtnStyle(false)}>
                   அடுத்து →
@@ -178,7 +180,7 @@ export default function Register() {
 
                 {/* Password */}
                 <div style={fieldGroupStyle}>
-                  <label style={labelStyle}>🔒 கடவுச்சொல்</label>
+                  <label style={labelStyle}><i className="ri-lock-line" style={{ marginRight: '8px' }}></i>கடவுச்சொல்</label>
                   <div style={{ position: 'relative' }}>
                     <input
                       id="register-password"
@@ -197,7 +199,7 @@ export default function Register() {
                       style={eyeBtnStyle}
                       tabIndex={-1}
                     >
-                      {showPassword ? '🙈' : '👁️'}
+                      <i className={showPassword ? "ri-eye-off-line" : "ri-eye-line"} style={{ color: '#0a0a0a' }}></i>
                     </button>
                   </div>
                   {/* Password strength bar */}
@@ -215,7 +217,7 @@ export default function Register() {
 
                 {/* Confirm Password */}
                 <div style={fieldGroupStyle}>
-                  <label style={labelStyle}>🔒 கடவுச்சொல் உறுதிப்படுத்தல்</label>
+                  <label style={labelStyle}><i className="ri-lock-password-line" style={{ marginRight: '8px' }}></i>கடவுச்சொல் உறுதிப்படுத்தல்</label>
                   <input
                     id="register-confirm-password"
                     type={showPassword ? 'text' : 'password'}
@@ -228,17 +230,17 @@ export default function Register() {
                   />
                   {form.confirmPassword && form.password !== form.confirmPassword && (
                     <div style={{ fontSize: 12, color: '#ff6b6b', marginTop: 4 }}>
-                      ❌ கடவுச்சொற்கள் பொருந்தவில்லை
+                      <i className="ri-close-circle-line" style={{ marginRight: '4px' }}></i>கடவுச்சொற்கள் பொருந்தவில்லை
                     </div>
                   )}
                   {form.confirmPassword && form.password === form.confirmPassword && (
                     <div style={{ fontSize: 12, color: '#2ecc71', marginTop: 4 }}>
-                      ✅ கடவுச்சொற்கள் பொருந்துகின்றன
+                      <i className="ri-checkbox-circle-line" style={{ marginRight: '4px' }}></i>கடவுச்சொற்கள் பொருந்துகின்றன
                     </div>
                   )}
                 </div>
 
-                {error && <div style={errorStyle}>⚠️ {error}</div>}
+                {error && <div style={errorStyle}><i className="ri-error-warning-line" style={{ marginRight: '8px' }}></i>{error}</div>}
 
                 <div style={{ display: 'flex', gap: 12 }}>
                   <button
@@ -247,7 +249,7 @@ export default function Register() {
                     style={backBtnStyle}
                     disabled={loading}
                   >
-                    ← பின்
+                    <i className="ri-arrow-left-line" style={{ marginRight: '8px' }}></i>பின்
                   </button>
                   <button
                     id="register-submit"
@@ -261,7 +263,10 @@ export default function Register() {
                         பதிவு செய்கிறது…
                       </span>
                     ) : (
-                      '🎉 கணக்கு உருவாக்கு'
+                      <>
+                        <i className="ri-user-add-line" style={{ marginRight: '8px' }}></i>
+                        கணக்கு உருவாக்கு
+                      </>
                     )}
                   </button>
                 </div>
@@ -285,7 +290,7 @@ export default function Register() {
 
           {/* Footer */}
           <p style={footerStyle}>
-            © 2026 Tamil AI Travel Planner — அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை
+            © 2026 தமிழ் AI பயண திட்டமிடுபவர் — அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை
           </p>
         </div>
       </div>
@@ -351,11 +356,11 @@ function strengthLabel(s) {
 
 const pageStyle = {
   minHeight: '100vh',
-  background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+  background: '#f3f4f6',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontFamily: "'Noto Sans Tamil', 'Inter', sans-serif",
+  fontFamily: "'DM Sans', 'Noto Sans Tamil', sans-serif",
   padding: '20px',
   position: 'relative',
   overflow: 'hidden',
@@ -366,7 +371,7 @@ const orb1Style = {
   width: 400,
   height: 400,
   borderRadius: '50%',
-  background: 'radial-gradient(circle, rgba(102,126,234,0.25) 0%, transparent 70%)',
+  background: 'radial-gradient(circle, rgba(40,135,255,0.15) 0%, transparent 70%)',
   top: '-10%',
   left: '-5%',
   animation: 'float1 12s ease-in-out infinite',
@@ -378,7 +383,7 @@ const orb2Style = {
   width: 350,
   height: 350,
   borderRadius: '50%',
-  background: 'radial-gradient(circle, rgba(118,75,162,0.3) 0%, transparent 70%)',
+  background: 'radial-gradient(circle, rgba(40,135,255,0.1) 0%, transparent 70%)',
   bottom: '-8%',
   right: '-3%',
   animation: 'float2 15s ease-in-out infinite',
@@ -390,7 +395,7 @@ const orb3Style = {
   width: 200,
   height: 200,
   borderRadius: '50%',
-  background: 'radial-gradient(circle, rgba(46,213,115,0.15) 0%, transparent 70%)',
+  background: 'radial-gradient(circle, rgba(40,135,255,0.05) 0%, transparent 70%)',
   top: '40%',
   left: '70%',
   animation: 'float3 10s ease-in-out infinite',
@@ -414,17 +419,17 @@ const logoCircleStyle = {
   width: 72,
   height: 72,
   borderRadius: '50%',
-  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  background: '#2887ff',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   fontSize: 36,
   margin: '0 auto 16px',
-  boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
+  boxShadow: '0 8px 32px rgba(40, 135, 255, 0.4)',
 };
 
 const brandTitleStyle = {
-  color: '#fff',
+  color: '#0a0a0a',
   fontSize: 22,
   fontWeight: 700,
   margin: 0,
@@ -432,23 +437,21 @@ const brandTitleStyle = {
 };
 
 const brandSubStyle = {
-  color: 'rgba(255,255,255,0.55)',
+  color: '#737373',
   fontSize: 13,
   marginTop: 6,
 };
 
 const cardStyle = {
-  background: 'rgba(255, 255, 255, 0.06)',
-  backdropFilter: 'blur(24px)',
-  WebkitBackdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255, 255, 255, 0.12)',
+  background: '#ffffff',
+  border: '1px solid rgba(0, 0, 0, 0.05)',
   borderRadius: 20,
   padding: '36px 32px 28px',
-  boxShadow: '0 16px 64px rgba(0, 0, 0, 0.3)',
+  boxShadow: '5px 5px 20px rgba(0, 0, 0, 0.1)',
 };
 
 const cardTitleStyle = {
-  color: '#fff',
+  color: '#0a0a0a',
   fontSize: 24,
   fontWeight: 700,
   margin: 0,
@@ -456,7 +459,7 @@ const cardTitleStyle = {
 };
 
 const cardDescStyle = {
-  color: 'rgba(255,255,255,0.6)',
+  color: '#737373',
   fontSize: 14,
   textAlign: 'center',
   marginTop: 6,
@@ -476,20 +479,18 @@ function stepDotStyle(active, current) {
     width: 32,
     height: 32,
     borderRadius: '50%',
-    background: active
-      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      : 'rgba(255,255,255,0.1)',
-    border: current ? '2px solid rgba(255,255,255,0.4)' : '2px solid transparent',
+    background: active ? '#2887ff' : '#ddd',
+    border: current ? '2px solid rgba(40,135,255,0.4)' : '2px solid transparent',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     transition: 'all 0.3s ease',
-    boxShadow: active ? '0 4px 12px rgba(102, 126, 234, 0.3)' : 'none',
+    boxShadow: active ? '0 4px 12px rgba(40,135,255, 0.3)' : 'none',
   };
 }
 
 const stepNumStyle = {
-  color: '#fff',
+  color: '#ffffff',
   fontSize: 13,
   fontWeight: 700,
 };
@@ -498,9 +499,7 @@ function stepLineStyle(active) {
   return {
     width: 60,
     height: 2,
-    background: active
-      ? 'linear-gradient(90deg, #667eea, #764ba2)'
-      : 'rgba(255,255,255,0.1)',
+    background: active ? '#2887ff' : '#ddd',
     transition: 'all 0.3s ease',
   };
 }
@@ -515,7 +514,7 @@ const stepLabelsStyle = {
 function stepLabelStyle(active) {
   return {
     fontSize: 11,
-    color: active ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)',
+    color: active ? '#0a0a0a' : '#737373',
     fontWeight: active ? 600 : 400,
     transition: 'all 0.3s ease',
   };
@@ -527,19 +526,19 @@ const fieldGroupStyle = {
 
 const labelStyle = {
   display: 'block',
-  color: 'rgba(255,255,255,0.85)',
+  color: '#0a0a0a',
   fontSize: 14,
-  fontWeight: 500,
+  fontWeight: 600,
   marginBottom: 8,
 };
 
 const inputStyle = {
   width: '100%',
   padding: '14px 16px',
-  borderRadius: 12,
-  border: '1px solid rgba(255,255,255,0.15)',
-  background: 'rgba(255,255,255,0.07)',
-  color: '#fff',
+  borderRadius: '5rem',
+  border: '1px solid #ddd',
+  background: '#ffffff',
+  color: '#0a0a0a',
   fontSize: 15,
   fontFamily: 'inherit',
   transition: 'all 0.2s ease',
@@ -548,7 +547,7 @@ const inputStyle = {
 
 const eyeBtnStyle = {
   position: 'absolute',
-  right: 12,
+  right: '16px',
   top: '50%',
   transform: 'translateY(-50%)',
   background: 'none',
@@ -559,8 +558,8 @@ const eyeBtnStyle = {
 };
 
 const summaryBoxStyle = {
-  background: 'rgba(102, 126, 234, 0.1)',
-  border: '1px solid rgba(102, 126, 234, 0.2)',
+  background: 'rgba(40,135,255, 0.1)',
+  border: '1px solid rgba(40,135,255, 0.2)',
   borderRadius: 12,
   padding: '12px 16px',
   marginBottom: 20,
@@ -570,7 +569,7 @@ const strengthBarBgStyle = {
   width: '100%',
   height: 4,
   borderRadius: 4,
-  background: 'rgba(255,255,255,0.1)',
+  background: '#ddd',
   overflow: 'hidden',
 };
 
@@ -589,10 +588,10 @@ function strengthBarFillStyle(strength) {
 const errorStyle = {
   marginBottom: 16,
   padding: '12px 16px',
-  background: 'rgba(231, 76, 60, 0.15)',
-  border: '1px solid rgba(231, 76, 60, 0.3)',
-  borderRadius: 12,
-  color: '#ff6b6b',
+  background: '#fde8e8',
+  border: '1px solid #f5c6c6',
+  borderRadius: '5rem',
+  color: '#c0392b',
   fontSize: 14,
 };
 
@@ -600,27 +599,24 @@ function submitBtnStyle(loading) {
   return {
     width: '100%',
     padding: '16px',
-    borderRadius: 12,
+    borderRadius: '5rem',
     border: 'none',
-    background: loading
-      ? 'rgba(102, 126, 234, 0.5)'
-      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: '#fff',
+    background: loading ? '#aaa' : '#2887ff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: 600,
     cursor: loading ? 'not-allowed' : 'pointer',
     fontFamily: 'inherit',
     transition: 'all 0.3s ease',
-    boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
   };
 }
 
 const backBtnStyle = {
   padding: '16px 20px',
-  borderRadius: 12,
-  border: '1px solid rgba(255,255,255,0.2)',
-  background: 'rgba(255,255,255,0.05)',
-  color: '#fff',
+  borderRadius: '5rem',
+  border: '1px solid #ddd',
+  background: '#ffffff',
+  color: '#0a0a0a',
   fontSize: 14,
   cursor: 'pointer',
   fontFamily: 'inherit',
@@ -645,7 +641,7 @@ const linkSectionStyle = {
 };
 
 const linkStyle = {
-  color: '#a78bfa',
+  color: '#2887ff',
   textDecoration: 'none',
   fontWeight: 600,
   transition: 'color 0.2s',
@@ -653,7 +649,7 @@ const linkStyle = {
 
 const footerStyle = {
   textAlign: 'center',
-  color: 'rgba(255,255,255,0.3)',
+  color: '#737373',
   fontSize: 12,
   marginTop: 24,
 };

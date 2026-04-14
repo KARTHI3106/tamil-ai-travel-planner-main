@@ -1,45 +1,59 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+const { Pool } = require('pg');
 require('dotenv').config();
 
-const DB_PATH = process.env.DB_PATH
-  ? path.resolve(__dirname, process.env.DB_PATH)
-  : path.join(__dirname, '..', 'database', 'travel.db');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/travelplanner',
+});
 
-let db;
-
-function getDb() {
-  if (!db) {
-    db = new Database(DB_PATH);
-    initializeSchema();
-  }
-  return db;
+async function getDb() {
+  return pool;
 }
 
-function initializeSchema() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS queries (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      transcript TEXT NOT NULL,
-      intent TEXT,
-      entities TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+async function initializeSchema() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-    CREATE TABLE IF NOT EXISTS itineraries (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      query_id INTEGER NOT NULL,
-      itinerary_text TEXT NOT NULL,
-      travel_options TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (query_id) REFERENCES queries(id) ON DELETE CASCADE
-    );
+    // Users
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        phone TEXT,
+        password_hash TEXT NOT NULL,
+        preferred_language TEXT DEFAULT 'ta',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
-    CREATE TABLE IF NOT EXISTS bookings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+    // Planner: Queries
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS queries (
+        id SERIAL PRIMARY KEY,
+        transcript TEXT NOT NULL,
+        intent TEXT,
+        entities TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Planner: Itineraries
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS itineraries (
+        id SERIAL PRIMARY KEY,
+        query_id INTEGER NOT NULL REFERENCES queries(id) ON DELETE CASCADE,
+        itinerary_text TEXT NOT NULL,
+        travel_options TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Bookings base schema part
+    const bookingSchemaPart = `
+      id SERIAL PRIMARY KEY,
       booking_id TEXT UNIQUE NOT NULL,
       user_id TEXT NOT NULL,
-      travel_type TEXT NOT NULL,
       travel_name TEXT NOT NULL,
       source TEXT NOT NULL,
       destination TEXT NOT NULL,
@@ -51,10 +65,26 @@ function initializeSchema() {
       pnr TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'confirmed',
       refund_amount INTEGER DEFAULT 0,
-      cancelled_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+      cancelled_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `;
+
+    // 4 Mode-specific booking tables
+    await client.query(`CREATE TABLE IF NOT EXISTS bus_bookings (${bookingSchemaPart});`);
+    await client.query(`CREATE TABLE IF NOT EXISTS train_bookings (${bookingSchemaPart});`);
+    await client.query(`CREATE TABLE IF NOT EXISTS flight_bookings (${bookingSchemaPart});`);
+    await client.query(`CREATE TABLE IF NOT EXISTS hotel_bookings (${bookingSchemaPart});`);
+
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error('Schema Initialization Error', e);
+  } finally {
+    client.release();
+  }
 }
 
-module.exports = { getDb };
+// Automatically create tables on import (can optionally be extracted)
+initializeSchema().catch(console.error);
+
+module.exports = { getDb, pool };

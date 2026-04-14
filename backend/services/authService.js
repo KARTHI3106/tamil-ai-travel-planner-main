@@ -4,35 +4,24 @@ const { getDb } = require('../db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tamil-travel-planner-secret-key-2026';
 const JWT_EXPIRES_IN = '7d';
-
 /**
  * Initialize users table in the database.
+ * (Now handled dynamically in db.js via pool initializeSchema,
+ * so we can leave this empty or removed, but keeping it for compat)
  */
-function initUsersTable() {
-  const db = getDb();
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      phone TEXT,
-      password_hash TEXT NOT NULL,
-      preferred_language TEXT DEFAULT 'ta',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+async function initUsersTable() {
+  // handled in db.js securely.
 }
 
 /**
  * Register a new user.
  */
-function registerUser({ name, email, phone, password }) {
-  const db = getDb();
-  initUsersTable();
+async function registerUser({ name, email, phone, password }) {
+  const db = await getDb(); // returns pool
 
   // Check if email already exists
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (existing) {
+  const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+  if (existing.rows.length > 0) {
     throw new Error('இந்த மின்னஞ்சல் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது');
   }
 
@@ -41,20 +30,22 @@ function registerUser({ name, email, phone, password }) {
   const passwordHash = bcrypt.hashSync(password, salt);
 
   // Insert user
-  const stmt = db.prepare(
-    'INSERT INTO users (name, email, phone, password_hash) VALUES (?, ?, ?, ?)'
+  const result = await db.query(
+    'INSERT INTO users (name, email, phone, password_hash) VALUES ($1, $2, $3, $4) RETURNING id',
+    [name, email, phone || null, passwordHash]
   );
-  const result = stmt.run(name, email, phone || null, passwordHash);
+  
+  const insertId = result.rows[0].id;
 
   // Generate JWT
   const token = jwt.sign(
-    { userId: result.lastInsertRowid, email, name },
+    { userId: insertId, email, name },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
 
   return {
-    userId: result.lastInsertRowid,
+    userId: insertId,
     name,
     email,
     phone,
@@ -65,14 +56,15 @@ function registerUser({ name, email, phone, password }) {
 /**
  * Login an existing user.
  */
-function loginUser({ email, password }) {
-  const db = getDb();
-  initUsersTable();
+async function loginUser({ email, password }) {
+  const db = await getDb();
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-  if (!user) {
+  const userRes = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+  if (userRes.rows.length === 0) {
     throw new Error('மின்னஞ்சல் அல்லது கடவுச்சொல் தவறானது');
   }
+
+  const user = userRes.rows[0];
 
   const isValid = bcrypt.compareSync(password, user.password_hash);
   if (!isValid) {
@@ -109,11 +101,10 @@ function verifyToken(token) {
 /**
  * Get user profile by ID.
  */
-function getUserById(userId) {
-  const db = getDb();
-  initUsersTable();
-  const user = db.prepare('SELECT id, name, email, phone, created_at FROM users WHERE id = ?').get(userId);
-  return user || null;
+async function getUserById(userId) {
+  const db = await getDb();
+  const userRes = await db.query('SELECT id, name, email, phone, created_at FROM users WHERE id = $1', [userId]);
+  return userRes.rows[0] || null;
 }
 
 module.exports = { registerUser, loginUser, verifyToken, getUserById, initUsersTable };

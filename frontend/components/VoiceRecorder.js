@@ -115,7 +115,7 @@ export default function VoiceRecorder({ onRecorded, onTranscript, disabled = fal
           style={btnStyle('#e74c3c', disabled)}
           title="Start voice recording"
         >
-          🎙️ பேசுங்கள் (Record)
+          <i className="ri-mic-line" style={{ marginRight: '8px' }}></i>பேசுங்கள் (Record)
         </button>
       ) : (
         <button
@@ -123,12 +123,12 @@ export default function VoiceRecorder({ onRecorded, onTranscript, disabled = fal
           style={btnStyle('#c0392b')}
           title="Stop recording"
         >
-          ⏹ நிறுத்து (Stop)
+          <i className="ri-stop-circle-line" style={{ marginRight: '8px' }}></i>நிறுத்து (Stop)
         </button>
       )}
       {isRecording && (
-        <span style={{ color: '#e74c3c', fontSize: 13, animation: 'pulse 1s infinite' }}>
-          🔴 பதிவு நடக்கிறது…
+        <span style={{ color: '#e74c3c', fontSize: 13, animation: 'pulse 1s infinite', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <i className="ri-record-circle-fill"></i> பதிவு நடக்கிறது…
         </span>
       )}
       {error && <span style={{ color: '#c0392b', fontSize: 13 }}>{error}</span>}

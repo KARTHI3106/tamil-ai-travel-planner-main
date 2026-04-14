@@ -53,18 +53,18 @@ async function callNlpService(text) {
 
 // ─── Helper: Process a text query end-to-end ─────────────────────────────────
 async function processQuery(transcript) {
-  const db = getDb();
+  const db = await getDb();
 
   // 1. Call NLP service
   const nlpResult = await callNlpService(transcript);
   const { intent, entities } = nlpResult;
 
   // 2. Save query to DB
-  const insertQuery = db.prepare(
-    'INSERT INTO queries (transcript, intent, entities) VALUES (?, ?, ?)'
+  const queryRow = await db.query(
+    'INSERT INTO queries (transcript, intent, entities) VALUES ($1, $2, $3) RETURNING id',
+    [transcript, intent, JSON.stringify(entities)]
   );
-  const queryRow = insertQuery.run(transcript, intent, JSON.stringify(entities));
-  const queryId = queryRow.lastInsertRowid;
+  const queryId = queryRow.rows[0].id;
 
   // 3. Generate travel options + itinerary
   const travelOptions = getTravelOptions(
@@ -75,18 +75,14 @@ async function processQuery(transcript) {
   const itineraryText = generateItinerary(nlpResult, travelOptions);
 
   // 4. Save itinerary to DB
-  const insertItinerary = db.prepare(
-    'INSERT INTO itineraries (query_id, itinerary_text, travel_options) VALUES (?, ?, ?)'
-  );
-  const itineraryRow = insertItinerary.run(
-    queryId,
-    itineraryText,
-    JSON.stringify(travelOptions)
+  const itineraryRow = await db.query(
+    'INSERT INTO itineraries (query_id, itinerary_text, travel_options) VALUES ($1, $2, $3) RETURNING id',
+    [queryId, itineraryText, JSON.stringify(travelOptions)]
   );
 
   return {
     queryId,
-    itineraryId: itineraryRow.lastInsertRowid,
+    itineraryId: itineraryRow.rows[0].id,
     transcript,
     intent,
     entities,
@@ -100,7 +96,7 @@ async function processQuery(transcript) {
 // ─── Auth Routes ─────────────────────────────────────────────────────────────
 
 // POST /auth/register — Register a new user
-app.post('/auth/register', apiLimiter, (req, res) => {
+app.post('/auth/register', apiLimiter, async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
     if (!name || !email || !password) {
@@ -113,7 +109,7 @@ app.post('/auth/register', apiLimiter, (req, res) => {
         error: 'கடவுச்சொல் குறைந்தது 6 எழுத்துகள் இருக்க வேண்டும்',
       });
     }
-    const result = registerUser({ name, email, phone, password });
+    const result = await registerUser({ name, email, phone, password });
     res.json({
       success: true,
       message: 'பதிவு வெற்றிகரமாக முடிந்தது! 🎉',
@@ -126,7 +122,7 @@ app.post('/auth/register', apiLimiter, (req, res) => {
 });
 
 // POST /auth/login — Login an existing user
-app.post('/auth/login', apiLimiter, (req, res) => {
+app.post('/auth/login', apiLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -134,7 +130,7 @@ app.post('/auth/login', apiLimiter, (req, res) => {
         error: 'மின்னஞ்சல் மற்றும் கடவுச்சொல் தேவை',
       });
     }
-    const result = loginUser({ email, password });
+    const result = await loginUser({ email, password });
     res.json({
       success: true,
       message: 'உள்நுழைவு வெற்றிகரமாக முடிந்தது! 🎉',
@@ -147,7 +143,7 @@ app.post('/auth/login', apiLimiter, (req, res) => {
 });
 
 // GET /auth/me — Get current user profile (requires token)
-app.get('/auth/me', (req, res) => {
+app.get('/auth/me', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -158,7 +154,7 @@ app.get('/auth/me', (req, res) => {
     if (!decoded) {
       return res.status(401).json({ error: 'செல்லாத டோக்கன்' });
     }
-    const user = getUserById(decoded.userId);
+    const user = await getUserById(decoded.userId);
     if (!user) {
       return res.status(404).json({ error: 'பயனர் கிடைக்கவில்லை' });
     }
@@ -175,10 +171,10 @@ app.get('/health', (req, res) => {
 });
 
 // GET /recent — last 10 queries with their itineraries
-app.get('/recent', apiLimiter, (req, res) => {
+app.get('/recent', apiLimiter, async (req, res) => {
   try {
-    const db = getDb();
-    const rows = db.prepare(`
+    const db = await getDb();
+    const rows = await db.query(`
       SELECT
         q.id AS query_id,
         q.transcript,
@@ -192,9 +188,9 @@ app.get('/recent', apiLimiter, (req, res) => {
       LEFT JOIN itineraries i ON i.query_id = q.id
       ORDER BY q.created_at DESC
       LIMIT 10
-    `).all();
+    `);
 
-    const results = rows.map(row => ({
+    const results = rows.rows.map(row => ({
       queryId: row.query_id,
       transcript: row.transcript,
       intent: row.intent,
@@ -268,7 +264,7 @@ app.post('/voice', apiLimiter, upload.single('audio'), async (req, res) => {
 // ─── Booking Routes ──────────────────────────────────────────────────────────
 
 // POST /book — Create a booking
-app.post('/book', apiLimiter, (req, res) => {
+app.post('/book', apiLimiter, async (req, res) => {
   try {
     const { travelOption, passengers, contactPhone, source, destination, travelDate } = req.body;
 
@@ -278,7 +274,7 @@ app.post('/book', apiLimiter, (req, res) => {
       });
     }
 
-    const booking = createBooking({
+    const booking = await createBooking({
       travelOption,
       passengers: parseInt(passengers, 10),
       contactPhone,
@@ -300,9 +296,9 @@ app.post('/book', apiLimiter, (req, res) => {
 });
 
 // GET /booking/:id — Get booking details
-app.get('/booking/:id', apiLimiter, (req, res) => {
+app.get('/booking/:id', apiLimiter, async (req, res) => {
   try {
-    const booking = getBooking(req.params.id);
+    const booking = await getBooking(req.params.id);
     if (!booking) {
       return res.status(404).json({ error: 'பதிவு கிடைக்கவில்லை' });
     }
@@ -314,9 +310,9 @@ app.get('/booking/:id', apiLimiter, (req, res) => {
 });
 
 // POST /booking/:id/cancel — Cancel a booking (conditional refund)
-app.post('/booking/:id/cancel', apiLimiter, (req, res) => {
+app.post('/booking/:id/cancel', apiLimiter, async (req, res) => {
   try {
-    const result = cancelBooking(req.params.id);
+    const result = await cancelBooking(req.params.id);
     if (!result.success) {
       return res.status(400).json({
         success: false,
@@ -331,9 +327,9 @@ app.post('/booking/:id/cancel', apiLimiter, (req, res) => {
 });
 
 // GET /bookings — Get all bookings
-app.get('/bookings', apiLimiter, (req, res) => {
+app.get('/bookings', apiLimiter, async (req, res) => {
   try {
-    const bookings = getAllBookings();
+    const bookings = await getAllBookings();
     res.json(bookings);
   } catch (err) {
     console.error('GET /bookings error:', err);

@@ -28,7 +28,7 @@ export default function Login() {
       localStorage.setItem('authToken', data.user.token);
       localStorage.setItem('userName', data.user.name);
       localStorage.setItem('userEmail', data.user.email);
-      router.push('/');
+      router.push('/planner');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -40,7 +40,7 @@ export default function Login() {
     <>
       <Head>
         <title>உள்நுழைவு — தமிழ் AI பயண திட்டமிடுபவர்</title>
-        <meta name="description" content="Login to Tamil AI Travel Planner" />
+        <meta name="description" content="தமிழ் AI பயண திட்டமிடுபவரில் உள்நுழைக" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
@@ -54,9 +54,11 @@ export default function Login() {
         <div style={cardContainerStyle}>
           {/* Logo / Brand */}
           <div style={brandStyle}>
-            <div style={logoCircleStyle}>✈️</div>
+            <div style={logoCircleStyle}>
+              <i className="ri-plane-fill" style={{ color: '#fff', fontSize: '32px' }}></i>
+            </div>
             <h1 style={brandTitleStyle}>தமிழ் AI பயண திட்டமிடுபவர்</h1>
-            <p style={brandSubStyle}>Tamil AI Travel Planner</p>
+            <p style={brandSubStyle}>தமிழ் AI பயண திட்டமிடுபவர்</p>
           </div>
 
           {/* Login Card */}
@@ -67,13 +69,13 @@ export default function Login() {
             <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
               {/* Email */}
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>📧 மின்னஞ்சல்</label>
+                <label style={labelStyle}><i className="ri-mail-line" style={{ marginRight: '8px' }}></i>மின்னஞ்சல்</label>
                 <input
                   id="login-email"
                   type="email"
                   value={form.email}
                   onChange={e => updateField('email', e.target.value)}
-                  placeholder="example@email.com"
+                  placeholder="உதாரணம்@email.com"
                   style={inputStyle}
                   autoComplete="email"
                   disabled={loading}
@@ -82,7 +84,7 @@ export default function Login() {
 
               {/* Password */}
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>🔒 கடவுச்சொல்</label>
+                <label style={labelStyle}><i className="ri-lock-line" style={{ marginRight: '8px' }}></i>கடவுச்சொல்</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     id="login-password"
@@ -100,7 +102,7 @@ export default function Login() {
                     style={eyeBtnStyle}
                     tabIndex={-1}
                   >
-                    {showPassword ? '🙈' : '👁️'}
+                    <i className={showPassword ? "ri-eye-off-line" : "ri-eye-line"} style={{ color: '#0a0a0a' }}></i>
                   </button>
                 </div>
               </div>
@@ -108,7 +110,7 @@ export default function Login() {
               {/* Error */}
               {error && (
                 <div style={errorStyle}>
-                  ⚠️ {error}
+                  <i className="ri-error-warning-line" style={{ marginRight: '8px' }}></i>{error}
                 </div>
               )}
 
@@ -125,7 +127,10 @@ export default function Login() {
                     உள்நுழைகிறது…
                   </span>
                 ) : (
-                  '🚀 உள்நுழைக'
+                  <>
+                    <i className="ri-login-circle-line" style={{ marginRight: '8px' }}></i>
+                    உள்நுழைக
+                  </>
                 )}
               </button>
             </form>
@@ -147,7 +152,7 @@ export default function Login() {
 
           {/* Footer */}
           <p style={footerStyle}>
-            © 2026 Tamil AI Travel Planner — அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை
+            © 2026 தமிழ் AI பயண திட்டமிடுபவர் — அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை
           </p>
         </div>
       </div>
@@ -192,11 +197,11 @@ export default function Login() {
 
 const pageStyle = {
   minHeight: '100vh',
-  background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+  background: '#f3f4f6',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontFamily: "'Noto Sans Tamil', 'Inter', sans-serif",
+  fontFamily: "'DM Sans', 'Noto Sans Tamil', sans-serif",
   padding: '20px',
   position: 'relative',
   overflow: 'hidden',
@@ -207,7 +212,7 @@ const orb1Style = {
   width: 400,
   height: 400,
   borderRadius: '50%',
-  background: 'radial-gradient(circle, rgba(102,126,234,0.25) 0%, transparent 70%)',
+  background: 'radial-gradient(circle, rgba(40,135,255,0.15) 0%, transparent 70%)',
   top: '-10%',
   left: '-5%',
   animation: 'float1 12s ease-in-out infinite',
@@ -219,7 +224,7 @@ const orb2Style = {
   width: 350,
   height: 350,
   borderRadius: '50%',
-  background: 'radial-gradient(circle, rgba(118,75,162,0.3) 0%, transparent 70%)',
+  background: 'radial-gradient(circle, rgba(40,135,255,0.1) 0%, transparent 70%)',
   bottom: '-8%',
   right: '-3%',
   animation: 'float2 15s ease-in-out infinite',
@@ -231,7 +236,7 @@ const orb3Style = {
   width: 200,
   height: 200,
   borderRadius: '50%',
-  background: 'radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%)',
+  background: 'radial-gradient(circle, rgba(40,135,255,0.05) 0%, transparent 70%)',
   top: '50%',
   left: '60%',
   animation: 'float3 10s ease-in-out infinite',
@@ -255,17 +260,17 @@ const logoCircleStyle = {
   width: 72,
   height: 72,
   borderRadius: '50%',
-  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  background: '#2887ff',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   fontSize: 36,
   margin: '0 auto 16px',
-  boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
+  boxShadow: '0 8px 32px rgba(40, 135, 255, 0.4)',
 };
 
 const brandTitleStyle = {
-  color: '#fff',
+  color: '#0a0a0a',
   fontSize: 22,
   fontWeight: 700,
   margin: 0,
@@ -273,23 +278,21 @@ const brandTitleStyle = {
 };
 
 const brandSubStyle = {
-  color: 'rgba(255,255,255,0.55)',
+  color: '#737373',
   fontSize: 13,
   marginTop: 6,
 };
 
 const cardStyle = {
-  background: 'rgba(255, 255, 255, 0.06)',
-  backdropFilter: 'blur(24px)',
-  WebkitBackdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255, 255, 255, 0.12)',
+  background: '#ffffff',
+  border: '1px solid rgba(0, 0, 0, 0.05)',
   borderRadius: 20,
   padding: '36px 32px 28px',
-  boxShadow: '0 16px 64px rgba(0, 0, 0, 0.3)',
+  boxShadow: '5px 5px 20px rgba(0, 0, 0, 0.1)',
 };
 
 const cardTitleStyle = {
-  color: '#fff',
+  color: '#0a0a0a',
   fontSize: 24,
   fontWeight: 700,
   margin: 0,
@@ -297,7 +300,7 @@ const cardTitleStyle = {
 };
 
 const cardDescStyle = {
-  color: 'rgba(255,255,255,0.6)',
+  color: '#737373',
   fontSize: 14,
   textAlign: 'center',
   marginTop: 6,
@@ -310,19 +313,19 @@ const fieldGroupStyle = {
 
 const labelStyle = {
   display: 'block',
-  color: 'rgba(255,255,255,0.85)',
+  color: '#0a0a0a',
   fontSize: 14,
-  fontWeight: 500,
+  fontWeight: 600,
   marginBottom: 8,
 };
 
 const inputStyle = {
   width: '100%',
   padding: '14px 16px',
-  borderRadius: 12,
-  border: '1px solid rgba(255,255,255,0.15)',
-  background: 'rgba(255,255,255,0.07)',
-  color: '#fff',
+  borderRadius: '5rem',
+  border: '1px solid #ddd',
+  background: '#ffffff',
+  color: '#0a0a0a',
   fontSize: 15,
   fontFamily: 'inherit',
   transition: 'all 0.2s ease',
@@ -331,7 +334,7 @@ const inputStyle = {
 
 const eyeBtnStyle = {
   position: 'absolute',
-  right: 12,
+  right: '16px',
   top: '50%',
   transform: 'translateY(-50%)',
   background: 'none',
@@ -344,10 +347,10 @@ const eyeBtnStyle = {
 const errorStyle = {
   marginBottom: 16,
   padding: '12px 16px',
-  background: 'rgba(231, 76, 60, 0.15)',
-  border: '1px solid rgba(231, 76, 60, 0.3)',
-  borderRadius: 12,
-  color: '#ff6b6b',
+  background: '#fde8e8',
+  border: '1px solid #f5c6c6',
+  borderRadius: '5rem',
+  color: '#c0392b',
   fontSize: 14,
 };
 
@@ -355,18 +358,15 @@ function submitBtnStyle(loading) {
   return {
     width: '100%',
     padding: '16px',
-    borderRadius: 12,
+    borderRadius: '5rem',
     border: 'none',
-    background: loading
-      ? 'rgba(102, 126, 234, 0.5)'
-      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: '#fff',
+    background: loading ? '#aaa' : '#2887ff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: 600,
     cursor: loading ? 'not-allowed' : 'pointer',
     fontFamily: 'inherit',
     transition: 'all 0.3s ease',
-    boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
     marginTop: 4,
   };
 }
@@ -389,7 +389,7 @@ const linkSectionStyle = {
 };
 
 const linkStyle = {
-  color: '#a78bfa',
+  color: '#2887ff',
   textDecoration: 'none',
   fontWeight: 600,
   transition: 'color 0.2s',
@@ -397,7 +397,7 @@ const linkStyle = {
 
 const footerStyle = {
   textAlign: 'center',
-  color: 'rgba(255,255,255,0.3)',
+  color: '#737373',
   fontSize: 12,
   marginTop: 24,
 };

@@ -1,19 +1,10 @@
 /**
  * bookingService.js
- * Handles mock booking creation, retrieval, and conditional cancellation.
- *
- * Cancellation Policy:
- *   - Free cancellation (100% refund): within 1 hour of booking
- *   - 50% refund: cancelled between 1–24 hours after booking
- *   - No refund: cancelled after 24 hours
- *   - Cannot cancel: if travel date has already passed
+ * Handles mock booking creation, retrieval, and conditional cancellation with PG.
  */
 
 const { getDb } = require('../db');
 
-/**
- * Generate a unique PNR: "PNR" + 9 random uppercase alphanumeric chars.
- */
 function generatePnr() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let pnr = 'PNR';
@@ -23,42 +14,35 @@ function generatePnr() {
   return pnr;
 }
 
-/**
- * Get the next booking ID (format: TN1001, TN1002, ...).
- */
-function getNextBookingId() {
-  const db = getDb();
-  const row = db.prepare(
-    "SELECT booking_id FROM bookings ORDER BY id DESC LIMIT 1"
-  ).get();
-
-  if (row && row.booking_id) {
-    const num = parseInt(row.booking_id.replace('TN', ''), 10);
-    return `TN${num + 1}`;
-  }
-  return 'TN1001';
+function getTableName(travelType) {
+  const t = (travelType || 'unknown').replace(/[^\w\s]/g, '').trim().toLowerCase();
+  if (t.includes('bus')) return 'bus_bookings';
+  if (t.includes('train')) return 'train_bookings';
+  if (t.includes('flight')) return 'flight_bookings';
+  if (t.includes('hotel')) return 'hotel_bookings';
+  return 'bus_bookings'; // fallback
 }
 
-/**
- * Validate phone number: must be exactly 10 digits.
- */
+async function getNextBookingId() {
+  const db = await getDb();
+  // Fetch from all tables to find max booking_id
+  const tables = ['bus_bookings', 'train_bookings', 'flight_bookings', 'hotel_bookings'];
+  let maxNum = 1000;
+  for (const table of tables) {
+    const res = await db.query(`SELECT booking_id FROM ${table} ORDER BY id DESC LIMIT 1`);
+    if (res.rows.length > 0) {
+      const num = parseInt(res.rows[0].booking_id.replace('TN', ''), 10);
+      if (num > maxNum) maxNum = num;
+    }
+  }
+  return `TN${maxNum + 1}`;
+}
+
 function validatePhone(phone) {
   return /^\d{10}$/.test(phone);
 }
 
-/**
- * Create a new booking.
- * @param {object} params
- * @param {object} params.travelOption - { type, name, price, duration }
- * @param {number} params.passengers - Number of passengers (1–6)
- * @param {string} params.contactPhone - 10-digit phone number
- * @param {string} [params.source] - Source city
- * @param {string} [params.destination] - Destination city
- * @param {string} [params.travelDate] - Travel date string
- * @returns {object} booking record
- */
-function createBooking({ travelOption, passengers, contactPhone, source, destination, travelDate }) {
-  // Validate inputs
+async function createBooking({ travelOption, passengers, contactPhone, source, destination, travelDate }) {
   if (!travelOption || !travelOption.name || !travelOption.price) {
     throw new Error('சரியான பயண விருப்பத்தை தேர்வு செய்யவும்');
   }
@@ -69,193 +53,129 @@ function createBooking({ travelOption, passengers, contactPhone, source, destina
     throw new Error('சரியான தொலைபேசி எண்ணை உள்ளிடவும் (10 இலக்கங்கள்)');
   }
 
-  const db = getDb();
-  const bookingId = getNextBookingId();
+  const db = await getDb();
+  const bookingId = await getNextBookingId();
   const pnr = generatePnr();
   const pricePerPerson = travelOption.price;
   const totalPrice = pricePerPerson * passengers;
   const travelType = (travelOption.type || 'unknown').replace(/[^\w\s]/g, '').trim().toLowerCase();
   const travelName = travelOption.name;
+  const tableName = getTableName(travelType);
 
-  const stmt = db.prepare(`
-    INSERT INTO bookings
-      (booking_id, user_id, travel_type, travel_name, source, destination,
+  await db.query(`
+    INSERT INTO ${tableName}
+      (booking_id, user_id, travel_name, source, destination,
        travel_date, passengers, price_per_person, total_price, contact_phone, pnr, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
-  `);
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'confirmed')
+  `, [
+    bookingId, 'guest', travelName, source || 'Unknown', destination || 'Unknown',
+    travelDate || '', passengers, pricePerPerson, totalPrice, contactPhone, pnr
+  ]);
 
-  stmt.run(
-    bookingId,
-    'guest',
-    travelType,
-    travelName,
-    source || 'Unknown',
-    destination || 'Unknown',
-    travelDate || '',
-    passengers,
-    pricePerPerson,
-    totalPrice,
-    contactPhone,
-    pnr
-  );
-
-  console.log(`[bookingService] Created booking ${bookingId} (PNR: ${pnr})`);
+  console.log(`[bookingService] Created booking ${bookingId} in ${tableName} (PNR: ${pnr})`);
 
   return {
-    bookingId,
-    pnr,
-    travelType,
-    travelName,
+    bookingId, pnr, travelType, travelName,
     source: source || 'Unknown',
     destination: destination || 'Unknown',
     travelDate: travelDate || '',
-    passengers,
-    pricePerPerson,
-    totalPrice,
-    contactPhone,
+    passengers, pricePerPerson, totalPrice, contactPhone,
     status: 'confirmed',
     createdAt: new Date().toISOString(),
   };
 }
 
-/**
- * Get a booking by its booking ID.
- * @param {string} bookingId - e.g. "TN1001"
- * @returns {object|null}
- */
-function getBooking(bookingId) {
-  const db = getDb();
-  const row = db.prepare("SELECT * FROM bookings WHERE booking_id = ?").get(bookingId);
-  if (!row) return null;
-
-  return {
-    bookingId: row.booking_id,
-    pnr: row.pnr,
-    travelType: row.travel_type,
-    travelName: row.travel_name,
-    source: row.source,
-    destination: row.destination,
-    travelDate: row.travel_date,
-    passengers: row.passengers,
-    pricePerPerson: row.price_per_person,
-    totalPrice: row.total_price,
-    contactPhone: row.contact_phone,
-    status: row.status,
-    refundAmount: row.refund_amount || 0,
-    cancelledAt: row.cancelled_at,
-    createdAt: row.created_at,
-  };
-}
-
-/**
- * Cancel a booking with conditional refund policy.
- *
- * Policy:
- *   - Within 1 hour of booking  → 100% refund
- *   - Between 1–24 hours        → 50% refund
- *   - After 24 hours            → No refund
- *   - Travel date passed        → Cannot cancel
- *
- * @param {string} bookingId
- * @returns {object} { success, message, refundAmount, refundPercent }
- */
-function cancelBooking(bookingId) {
-  const db = getDb();
-  const row = db.prepare("SELECT * FROM bookings WHERE booking_id = ?").get(bookingId);
-
-  if (!row) {
-    return { success: false, message: 'பதிவு கிடைக்கவில்லை' };
-  }
-
-  if (row.status === 'cancelled') {
-    return { success: false, message: 'இந்த பதிவு ஏற்கனவே ரத்து செய்யப்பட்டது' };
-  }
-
-  // Check if travel date has passed
-  if (row.travel_date) {
-    const travelDate = new Date(row.travel_date);
-    if (!isNaN(travelDate.getTime()) && travelDate < new Date()) {
+async function getBooking(bookingId) {
+  const db = await getDb();
+  const tables = ['bus_bookings', 'train_bookings', 'flight_bookings', 'hotel_bookings'];
+  for (const table of tables) {
+    const res = await db.query(`SELECT *, '${table}' as _table FROM ${table} WHERE booking_id = $1`, [bookingId]);
+    if (res.rows.length > 0) {
+      const row = res.rows[0];
       return {
-        success: false,
-        message: 'பயண தேதி கடந்துவிட்டதால் ரத்து செய்ய இயலாது',
+        bookingId: row.booking_id, pnr: row.pnr, travelType: row._table.replace('_bookings', ''),
+        travelName: row.travel_name, source: row.source, destination: row.destination,
+        travelDate: row.travel_date, passengers: row.passengers,
+        pricePerPerson: row.price_per_person, totalPrice: row.total_price,
+        contactPhone: row.contact_phone, status: row.status,
+        refundAmount: row.refund_amount || 0, cancelledAt: row.cancelled_at, createdAt: row.created_at,
       };
     }
   }
+  return null;
+}
 
-  // Calculate time since booking
+async function cancelBooking(bookingId) {
+  const db = await getDb();
+  
+  // Find which table has it
+  const tables = ['bus_bookings', 'train_bookings', 'flight_bookings', 'hotel_bookings'];
+  let row = null;
+  let tableName = '';
+  for (const tbl of tables) {
+    const res = await db.query(`SELECT * FROM ${tbl} WHERE booking_id = $1`, [bookingId]);
+    if (res.rows.length > 0) {
+      row = res.rows[0];
+      tableName = tbl;
+      break;
+    }
+  }
+
+  if (!row) return { success: false, message: 'பதிவு கிடைக்கவில்லை' };
+  if (row.status === 'cancelled') return { success: false, message: 'இந்த பதிவு ஏற்கனவே ரத்து செய்யப்பட்டது' };
+
+  if (row.travel_date) {
+    const travelDate = new Date(row.travel_date);
+    if (!isNaN(travelDate.getTime()) && travelDate < new Date()) {
+      return { success: false, message: 'பயண தேதி கடந்துவிட்டதால் ரத்து செய்ய இயலாது' };
+    }
+  }
+
   const bookingTime = new Date(row.created_at);
   const now = new Date();
   const hoursSinceBooking = (now - bookingTime) / (1000 * 60 * 60);
 
-  let refundPercent = 0;
-  let refundAmount = 0;
-  let message = '';
-
+  let refundPercent = 0, refundAmount = 0, message = '';
   if (hoursSinceBooking <= 1) {
-    // Free cancellation — within 1 hour
     refundPercent = 100;
     refundAmount = row.total_price;
     message = `ரத்து செய்யப்பட்டது. முழு பணம் திருப்பி அளிக்கப்படும் (₹${refundAmount})`;
   } else if (hoursSinceBooking <= 24) {
-    // 50% refund — 1 to 24 hours
     refundPercent = 50;
     refundAmount = Math.floor(row.total_price * 0.5);
     message = `ரத்து செய்யப்பட்டது. 50% பணம் திருப்பி அளிக்கப்படும் (₹${refundAmount})`;
   } else {
-    // No refund — after 24 hours
-    refundPercent = 0;
-    refundAmount = 0;
     message = 'ரத்து செய்யப்பட்டது. 24 மணி நேரத்திற்கு மேல் ஆனதால் பணம் திருப்பி அளிக்கப்படாது';
   }
 
-  // Update database
-  db.prepare(`
-    UPDATE bookings
-    SET status = 'cancelled', refund_amount = ?, cancelled_at = CURRENT_TIMESTAMP
-    WHERE booking_id = ?
-  `).run(refundAmount, bookingId);
+  await db.query(`
+    UPDATE ${tableName}
+    SET status = 'cancelled', refund_amount = $1, cancelled_at = CURRENT_TIMESTAMP
+    WHERE booking_id = $2
+  `, [refundAmount, bookingId]);
 
-  console.log(`[bookingService] Cancelled ${bookingId} — refund: ${refundPercent}% (₹${refundAmount})`);
-
-  return {
-    success: true,
-    message,
-    refundAmount,
-    refundPercent,
-    bookingId,
-  };
+  return { success: true, message, refundAmount, refundPercent, bookingId };
 }
 
-/**
- * Get all bookings, newest first.
- * @returns {Array<object>}
- */
-function getAllBookings() {
-  const db = getDb();
-  const rows = db.prepare("SELECT * FROM bookings ORDER BY created_at DESC").all();
-
-  return rows.map(row => ({
-    bookingId: row.booking_id,
-    pnr: row.pnr,
-    travelType: row.travel_type,
-    travelName: row.travel_name,
-    source: row.source,
-    destination: row.destination,
-    travelDate: row.travel_date,
-    passengers: row.passengers,
-    pricePerPerson: row.price_per_person,
-    totalPrice: row.total_price,
-    contactPhone: row.contact_phone,
-    status: row.status,
-    refundAmount: row.refund_amount || 0,
-    cancelledAt: row.cancelled_at,
-    createdAt: row.created_at,
+async function getAllBookings() {
+  const db = await getDb();
+  const queries = [
+    `SELECT *, 'bus' as travel_type FROM bus_bookings`,
+    `SELECT *, 'train' as travel_type FROM train_bookings`,
+    `SELECT *, 'flight' as travel_type FROM flight_bookings`,
+    `SELECT *, 'hotel' as travel_type FROM hotel_bookings`
+  ];
+  
+  const res = await db.query(queries.join(' UNION ALL ') + ' ORDER BY created_at DESC');
+  
+  return res.rows.map(row => ({
+    bookingId: row.booking_id, pnr: row.pnr, travelType: row.travel_type,
+    travelName: row.travel_name, source: row.source, destination: row.destination,
+    travelDate: row.travel_date, passengers: row.passengers,
+    pricePerPerson: row.price_per_person, totalPrice: row.total_price,
+    contactPhone: row.contact_phone, status: row.status,
+    refundAmount: row.refund_amount || 0, cancelledAt: row.cancelled_at, createdAt: row.created_at,
   }));
 }
 
-module.exports = {
-  createBooking,
-  getBooking,
-  cancelBooking,
-  getAllBookings,
-};
+module.exports = { createBooking, getBooking, cancelBooking, getAllBookings };
